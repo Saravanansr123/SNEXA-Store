@@ -13,11 +13,18 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { collection, getCountFromServer } from "firebase/firestore";
-//import { db } from "../lib/firebase";
+import { db } from "../../lib/firebase"; // ✅ FIXED IMPORT
 
 /* ================= MENU CONFIG ================= */
 
-const menu = [
+type MenuItem = {
+  label: string;
+  icon: React.ElementType;
+  path: string;
+  countKey?: "products" | "orders" | "users";
+};
+
+const menu: MenuItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
   { label: "Analytics", icon: BarChart3, path: "/admin/analytics" },
   { label: "Products", icon: Package, path: "/admin/products", countKey: "products" },
@@ -35,6 +42,8 @@ export default function AdminSidebar() {
 
   /* ================= LOAD FIREBASE COUNTS ================= */
   useEffect(() => {
+    let mounted = true;
+
     const loadCounts = async () => {
       try {
         const [products, orders, users] = await Promise.all([
@@ -42,6 +51,8 @@ export default function AdminSidebar() {
           getCountFromServer(collection(db, "orders")),
           getCountFromServer(collection(db, "users")),
         ]);
+
+        if (!mounted) return;
 
         setCounts({
           products: products.data().count,
@@ -54,6 +65,10 @@ export default function AdminSidebar() {
     };
 
     loadCounts();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
