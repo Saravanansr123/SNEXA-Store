@@ -1,10 +1,9 @@
-import { AdminSidebar, StatCard, SalesAnalytics, TopSellingProducts, CurrentOffers } from "../../components/admin";
+import { StatCard, SalesAnalytics, TopSellingProducts, CurrentOffers } from "../../components/admin";
 
 export default function AdminDashboard() {
   return (
     <div className="flex min-h-screen bg-black text-white">
-      <AdminSidebar />
-
+      
       <main className="flex-1 p-8 space-y-6">
         <h1 className="text-2xl font-semibold">Overview</h1>
 
