@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Heart, ShoppingCart, Eye, SlidersHorizontal, X } from 'lucide-react';
 import { db } from '../lib/firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
+import { collection, getDocs, query, where, Query } from 'firebase/firestore';
+
 
 interface Product {
   id: string;
@@ -48,29 +49,43 @@ export const ProductsPage = ({ onNavigate, categorySlug }: ProductsPageProps) =>
   }, [products, filters]);
 
   const loadProducts = async () => {
-    setLoading(true);
-    try {
-      let productsRef = collection(db, 'products');
-      let productsQuery = productsRef;
+  setLoading(true);
 
-      if (categorySlug && categorySlug !== 'all') {
-        // Get category by slug
-        const categoriesSnapshot = await getDocs(query(collection(db, 'categories'), where('slug', '==', categorySlug)));
-        const categoryDoc = categoriesSnapshot.docs[0];
-        if (categoryDoc) {
-          productsQuery = query(productsRef, where('category_id', '==', categoryDoc.id));
-        }
+  try {
+    // ✅ Explicitly type as Query
+    let productsQuery: Query = query(collection(db, 'products'));
+
+    if (categorySlug && categorySlug !== 'all') {
+      const categoriesSnapshot = await getDocs(
+        query(collection(db, 'categories'), where('slug', '==', categorySlug))
+      );
+
+      const categoryDoc = categoriesSnapshot.docs[0];
+
+      if (categoryDoc) {
+        productsQuery = query(
+          collection(db, 'products'),
+          where('category_id', '==', categoryDoc.id)
+        );
       }
-
-      const productsSnapshot = await getDocs(productsQuery);
-      const productsData = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Product[];
-      setProducts(productsData);
-    } catch (error) {
-      // Optionally handle error
-      setProducts([]);
     }
-    setLoading(false);
-  };
+
+    const productsSnapshot = await getDocs(productsQuery);
+
+    const productsData = productsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Product[];
+
+    setProducts(productsData);
+  } catch (error) {
+    console.error(error);
+    setProducts([]);
+  }
+
+  setLoading(false);
+};
+
 
   const applyFilters = () => {
     let filtered = [...products];
@@ -154,89 +169,126 @@ export const ProductsPage = ({ onNavigate, categorySlug }: ProductsPageProps) =>
             />
           )}
 
-          {/* FILTER PANEL */}
-          <div
-            className={`lg:block lg:w-72 ${
-              isFilterOpen
-                ? 'fixed top-0 right-0 h-full w-80 bg-black/80 backdrop-blur-2xl z-50 p-6'
-                : 'hidden'
-            }`}
+          {/* MOBILE OVERLAY */}
+{isFilterOpen && (
+  <div
+    className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden"
+    onClick={() => setIsFilterOpen(false)}
+  />
+)}
+
+{/* FILTER PANEL */}
+<div
+  className={`
+    fixed top-0 right-0 h-full w-80 z-50
+    bg-black/80 backdrop-blur-2xl p-6
+    transform transition-transform duration-300 ease-in-out
+    ${isFilterOpen ? "translate-x-0" : "translate-x-full"}
+    lg:translate-x-0
+    lg:static lg:h-auto lg:w-72
+    lg:bg-transparent lg:backdrop-blur-0 lg:p-0
+    lg:border-r lg:border-white/10
+  `}
+>
+  <div className="space-y-8 lg:sticky lg:top-24">
+    {/* MOBILE HEADER */}
+    <div className="flex items-center justify-between lg:hidden">
+      <h2 className="text-xl">Filters</h2>
+      <button
+        onClick={() => setIsFilterOpen(false)}
+        className="p-2 rounded-full hover:bg-white/10 transition"
+      >
+        <X />
+      </button>
+    </div>
+
+    {/* PRICE */}
+    <div>
+      <h3 className="font-medium mb-4">Price Range</h3>
+      <div className="space-y-2">
+        {[
+          { label: "All Prices", value: "all" },
+          { label: "Under ₹1,000", value: "0-1000" },
+          { label: "₹1,000 - ₹2,500", value: "1000-2500" },
+          { label: "₹2,500 - ₹5,000", value: "2500-5000" },
+          { label: "Above ₹5,000", value: "5000-999999" },
+        ].map((option) => (
+          <label
+            key={option.value}
+            className="flex gap-2 cursor-pointer"
           >
-            <div className="space-y-8">
-              <div className="flex items-center justify-between lg:hidden">
-                <h2 className="text-xl">Filters</h2>
-                <button onClick={() => setIsFilterOpen(false)}>
-                  <X />
-                </button>
-              </div>
+            <input
+              type="radio"
+              checked={filters.priceRange === option.value}
+              onChange={() =>
+                setFilters({
+                  ...filters,
+                  priceRange: option.value,
+                })
+              }
+              className="accent-white"
+            />
+            <span className="text-gray-300">
+              {option.label}
+            </span>
+          </label>
+        ))}
+      </div>
+    </div>
 
-              {/* PRICE */}
-              <div>
-                <h3 className="font-medium mb-4">Price Range</h3>
-                <div className="space-y-2">
-                  {[
-                    { label: 'All Prices', value: 'all' },
-                    { label: 'Under ₹1,000', value: '0-1000' },
-                    { label: '₹1,000 - ₹2,500', value: '1000-2500' },
-                    { label: '₹2,500 - ₹5,000', value: '2500-5000' },
-                    { label: 'Above ₹5,000', value: '5000-999999' },
-                  ].map((option) => (
-                    <label key={option.value} className="flex gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        checked={filters.priceRange === option.value}
-                        onChange={() =>
-                          setFilters({ ...filters, priceRange: option.value })
-                        }
-                        className="accent-white"
-                      />
-                      <span className="text-gray-300">{option.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+    {/* TYPE */}
+    <div className="pt-6 border-t border-white/10">
+      <h3 className="font-medium mb-4">Type</h3>
+      <div className="space-y-2">
+        {[
+          { label: "All Items", value: "all" },
+          { label: "Trending", value: "trending" },
+          { label: "New Arrivals", value: "new" },
+        ].map((option) => (
+          <label
+            key={option.value}
+            className="flex gap-2 cursor-pointer"
+          >
+            <input
+              type="radio"
+              checked={filters.type === option.value}
+              onChange={() =>
+                setFilters({
+                  ...filters,
+                  type: option.value,
+                })
+              }
+              className="accent-white"
+            />
+            <span className="text-gray-300">
+              {option.label}
+            </span>
+          </label>
+        ))}
+      </div>
+    </div>
 
-              {/* TYPE */}
-              <div className="pt-6 border-t border-white/10">
-                <h3 className="font-medium mb-4">Type</h3>
-                <div className="space-y-2">
-                  {[
-                    { label: 'All Items', value: 'all' },
-                    { label: 'Trending', value: 'trending' },
-                    { label: 'New Arrivals', value: 'new' },
-                  ].map((option) => (
-                    <label key={option.value} className="flex gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        checked={filters.type === option.value}
-                        onChange={() =>
-                          setFilters({ ...filters, type: option.value })
-                        }
-                        className="accent-white"
-                      />
-                      <span className="text-gray-300">{option.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+    {/* SORT */}
+    <div className="pt-6 border-t border-white/10">
+      <h3 className="font-medium mb-3">Sort By</h3>
+      <select
+        value={filters.sortBy}
+        onChange={(e) =>
+          setFilters({
+            ...filters,
+            sortBy: e.target.value,
+          })
+        }
+        className="w-full px-4 py-2 rounded-xl bg-black border border-white/20 focus:outline-none"
+      >
+        <option value="newest">Newest First</option>
+        <option value="price-low">Price: Low to High</option>
+        <option value="price-high">Price: High to Low</option>
+      </select>
+    </div>
+  </div>
+</div>
 
-              {/* SORT */}
-              <div className="pt-6 border-t border-white/10">
-                <h3 className="font-medium mb-3">Sort By</h3>
-                <select
-                  value={filters.sortBy}
-                  onChange={(e) =>
-                    setFilters({ ...filters, sortBy: e.target.value })
-                  }
-                  className="w-full px-4 py-2 rounded-xl bg-black border border-white/20 focus:outline-none"
-                >
-                  <option value="newest">Newest First</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
-                </select>
-              </div>
-            </div>
-          </div>
 
           {/* PRODUCTS */}
           <div className="flex-1">
