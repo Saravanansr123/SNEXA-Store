@@ -1,77 +1,81 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { auth, db } from '../lib/firebase';
+import { createContext, useContext, useEffect, useState } from "react";
+import { auth, db } from "../lib/firebase";
 import {
-  onAuthStateChanged,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  User as FirebaseUser,
-} from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+  signOut,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  User,
+} from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
-interface AuthContextType {
-  user: FirebaseUser | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
-  signOut: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
+type AdminUser = {
+  uid: string;
+  name: string;
+  email: string;
 };
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
+interface AuthContextType {
+  user: User | null;
+  admin: AdminUser | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>; // ✅ ADD
+}
+
+const AuthContext = createContext<AuthContextType>(null!);
+
+export const useAuth = () => useContext(AuthContext);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    return onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
+
+      if (firebaseUser) {
+        const adminRef = doc(db, "admins", firebaseUser.uid);
+        const snap = await getDoc(adminRef);
+
+        if (snap.exists()) {
+          setAdmin({
+            uid: firebaseUser.uid,
+            name: snap.data().name,
+            email: snap.data().email,
+          });
+        } else {
+          setAdmin(null);
+        }
+      } else {
+        setAdmin(null);
+      }
+
       setLoading(false);
     });
-    return () => unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      return { error: null };
-    } catch (error) {
-      return { error: error as Error };
-    }
+  const login = async (email: string, password: string) => {
+    await signInWithEmailAndPassword(auth, email, password);
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const firebaseUser = userCredential.user;
-      // Create user profile in Firestore
-      await setDoc(doc(db, 'user_profiles', firebaseUser.uid), {
-        id: firebaseUser.uid,
-        full_name: fullName,
-        email: firebaseUser.email,
-        created_at: new Date().toISOString(),
-      });
-      return { error: null };
-    } catch (error) {
-      return { error: error as Error };
-    }
+  const logout = async () => {
+    await signOut(auth);
   };
 
-  const signOut = async () => {
-    await firebaseSignOut(auth);
+  // ✅ PASSWORD RESET
+  const resetPassword = async (email: string) => {
+    await sendPasswordResetEmail(auth, email);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider
+      value={{ user, admin, loading, login, logout, resetPassword }}
+    >
       {children}
     </AuthContext.Provider>
   );
-};
+}

@@ -5,10 +5,10 @@ import { WishlistProvider } from "./contexts/WishlistContext";
 import { Navigation } from "./components/Navigation";
 import { Footer } from "./components/Footer";
 import { CartPanel } from "./components/CartPanel";
-
+import ProductAddEdit from "./pages/admin/ProductAddEdit";
 import HomePageSnap from "./pages/HomePageSnap";
 import { ProductsPage } from "./pages/ProductsPage";
-import { ProductDetailPage } from "./pages/ProductDetailPage";
+import ProductDetailPage from "./pages/ProductDetailPage";
 import { CheckoutPage } from "./pages/CheckoutPage";
 import { WishlistPage } from "./pages/WishlistPage";
 import { ProfilePage } from "./pages/ProfilePage";
@@ -17,16 +17,16 @@ import { AuthPage } from "./pages/AuthPage";
 
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/admin/AdminDashboard";
-//import Analytics from "./pages/admin/Analytics";
 import Products from "./pages/admin/Products";
 import Orders from "./pages/admin/Orders";
 import Customers from "./pages/admin/Customers";
+import AdminProtectedRoute from "./routes/AdminProtectedRoute";
+import AdminLogin from "./pages/admin/AdminLogin";
 
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Hide main site layout on auth pages & admin
   const hideLayout =
     location.pathname === "/login" ||
     location.pathname === "/register" ||
@@ -48,7 +48,8 @@ function App() {
 
           <main className="min-h-screen">
             <Routes>
-              {/* PUBLIC ROUTES */}
+
+              {/* ================= PUBLIC ================= */}
               <Route
                 path="/"
                 element={<HomePageSnap onNavigate={(page) => navigate(page)} />}
@@ -57,15 +58,7 @@ function App() {
                 path="/products"
                 element={<ProductsPage onNavigate={(page) => navigate(page)} />}
               />
-              <Route
-                path="/product/:slug"
-                element={
-                  <ProductDetailPage
-                    onNavigate={(page) => navigate(page)}
-                    productSlug=""
-                  />
-                }
-              />
+              <Route path="/product/:slug" element={<ProductDetailPage />} />
               <Route
                 path="/checkout"
                 element={<CheckoutPage onNavigate={(page) => navigate(page)} />}
@@ -83,7 +76,7 @@ function App() {
                 element={<OrdersPage onNavigate={(page) => navigate(page)} />}
               />
 
-              {/* AUTH ROUTES */}
+              {/* ================= AUTH ================= */}
               <Route
                 path="/login"
                 element={<AuthPage mode="login" onNavigate={(page) => navigate(page)} />}
@@ -95,20 +88,28 @@ function App() {
                 }
               />
 
-              {/* ADMIN ROUTES (WITH SIDEBAR LAYOUT) */}
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<Dashboard />} />
-                 {/* <Route path="analytics" element={<Analytics />} /> */}
-                <Route path="products" element={<Products />} /> 
-                <Route path="orders" element={<Orders />} />
-                <Route path="customers" element={<Customers />} />
+              {/* ================= ADMIN LOGIN ================= */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+
+              {/* ================= ADMIN PROTECTED ================= */}
+              <Route element={<AdminProtectedRoute />}>
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<Dashboard />} />
+                  <Route path="products" element={<Products />} />
+                  <Route path="orders" element={<Orders />} />
+                  <Route path="customers" element={<Customers />} />
+                  
+                  <Route path="admin/products/new" element={<ProductAddEdit />} />
+                  <Route path="admin/products/:id" element={<ProductAddEdit />} />
+                </Route>
               </Route>
 
-              {/* FALLBACK */}
+              {/* ================= FALLBACK ================= */}
               <Route
                 path="*"
                 element={<HomePageSnap onNavigate={(page) => navigate(page)} />}
               />
+
             </Routes>
           </main>
 

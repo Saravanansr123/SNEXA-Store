@@ -16,7 +16,7 @@ import GlassProductSpotlight from "../components/GlassProductSpotlight";
 import FloatingGlassProducts from "../components/FloatingGlassProducts";
 import GlassFeatureStrip from "../components/GlassFeatureStrip";
 import { SmoothScrollProductSection } from "../components/SmoothScrollProductSection";
-import  CircularText  from "../components/ui/CircularText";
+import CircularText from "../components/ui/CircularText";
 
 interface HomePageSnapProps {
   onNavigate: (page: string) => void;
@@ -32,8 +32,8 @@ const carouselImages = [
 const reveal: HTMLMotionProps<"div"> = {
   initial: {
     opacity: 0,
-    y: 48,        // 👈 from bottom
-    scale: 0.98,  // subtle settle
+    y: 48,
+    scale: 0.98,
   },
   whileInView: {
     opacity: 1,
@@ -42,11 +42,11 @@ const reveal: HTMLMotionProps<"div"> = {
   },
   viewport: {
     once: true,
-    margin: "0px 0px -30% 0px", // early trigger (no late reveal)
+    margin: "0px 0px -30% 0px",
   },
   transition: {
     duration: 0.55,
-    ease: [0.16, 1, 0.3, 1], // Luma easing
+    ease: [0.16, 1, 0.3, 1],
   },
 };
 
@@ -89,50 +89,50 @@ export default function HomePageSnap({ onNavigate }: HomePageSnapProps) {
 
       {/* ================= SECTIONS ================= */}
 
-      <section className="py-32">
+      <section className="pt-32">
         <motion.div {...reveal}>
           <ProductivitySlider onNavigate={onNavigate} />
         </motion.div>
       </section>
 
-      <section className="py-32">
+      <section className="pt-32">
         <motion.div {...reveal}>
           <MorphingText />
         </motion.div>
       </section>
 
-      <section className="py-32">
+      <section className="pt-32">
         <motion.div {...reveal}>
           <FloatingGlassProducts />
         </motion.div>
       </section>
 
-      <section className="py-32">
+      <section className="pt-32">
         <motion.div {...reveal}>
           <LumaSplitPanels />
         </motion.div>
       </section>
 
-      <section className="py-32">
+      <section className="pt-32">
         <motion.div {...reveal}>
           <LumaStatement />
         </motion.div>
       </section>
 
-      <section className="py-32">
+      <section className="pt-32" >
         <motion.div {...reveal}>
           <GlassProductSpotlight />
         </motion.div>
       </section>
 
-      <section className="py-32">
+      <section className="pt-32">
         <motion.div {...reveal}>
           <GlassFeatureStrip />
         </motion.div>
       </section>
 
       {/* ================= CATEGORY GRID ================= */}
-      <section className="max-w-7xl mx-auto grid md:grid-cols-3 gap-8 py-32 px-6">
+      <section className="max-w-7xl mx-auto grid md:grid-cols-3 gap-8 pt-32 px-6">
         {["Mens", "Womens", "Kids"].map((title, i) => (
           <motion.div
             key={title}
@@ -170,47 +170,48 @@ export default function HomePageSnap({ onNavigate }: HomePageSnapProps) {
       </section>
 
       {/* ================= SMOOTH SCROLL STORY ================= */}
-      <SmoothScrollProductSection />
+      <section className="pt-32">
+        <SmoothScrollProductSection />
+      </section>
 
       {/* ================= NEWSLETTER ================= */}
-      <section
-        className="
-          mx-auto max-w-5xl rounded-[64px]
-          bg-neutral-900 py-20 text-center mb-32
-        "
-      >
-        <h2 className="text-2xl">Join SNEXA Club</h2>
-        <p className="mt-2 text-white/60">
-          Early access & private drops
-        </p>
+      <section className="mt-32 mb-24">
+        <div
+          className="
+            mx-auto max-w-5xl rounded-[64px]
+            bg-neutral-900 py-20 text-center
+          "
+        >
+          <h2 className="text-2xl">Join SNEXA Club</h2>
+          <p className="mt-2 text-white/60">
+            Early access & private drops
+          </p>
 
-        <div className="mt-8 flex justify-center">
-          <input
-            placeholder="Your email"
-            className="rounded-l-full px-6 py-3 text-black outline-none"
-          />
-          <button className="rounded-r-full bg-white px-6 text-black">
-            Subscribe
-          </button>
+          <div className="mt-8 flex justify-center">
+            <input
+              placeholder="Your email"
+              className="rounded-l-full px-6 py-3 text-black outline-none"
+            />
+            <button className="rounded-r-full bg-white px-6 text-black">
+              Subscribe
+            </button>
+          </div>
         </div>
       </section>
-      
+
+      {/* ================= FLOATING CTA ================= */}
       <div className="fixed bottom-6 right-6 z-[70]">
-  <div className="relative w-[220px] h-[220px]">
-    <CircularText
-      text="SNEXA • PREMIUM • FASHIONS • "
-      spinDuration={20}
-      className="text-white/70"
-    />
-
-    <div className="absolute inset-0 flex items-center justify-center">
-      <button className="w-14 h-14 rounded-full bg-black text-black shadow-xl">
-        
-      </button>
-    </div>
-  </div>
-</div>
-
+        <div className="relative w-[220px] h-[220px]">
+          <CircularText
+            text="SNEXA • PREMIUM • FASHIONS • "
+            spinDuration={20}
+            className="text-white/70"
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <button className="w-14 h-14 rounded-full bg-black shadow-xl" />
+          </div>
+        </div>
+      </div>
     </main>
   );
 }
